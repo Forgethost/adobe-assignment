@@ -1,0 +1,7 @@
+pytest-cov==3.0.0
+tox==3.24
+flake8==3.9.2
+flake8-bugbear==21.11.29
+flake8-builtins==1.5.3
+flake8-import-order==0.18.1
+black==22.8.0

@@ -1,0 +1,55 @@
+version=0.1
+
+[default.deploy. parameters]
+stack_name = "skp-app"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+region = "us-east-1"
+S3_bucket = "bs-Workspace"
+S3_prefix = "sam/repo/skp-app/"
+parameter_overrides=[
+    "sourceBucket=bs-Workspace",
+    "destinationBucket=bs-Workspace",
+    "sourcePrefix=misc/",
+    "destinationPrefix=misc/",
+    "env=dev",
+    "retailerDomain=www.esshopzilla.com",
+    "checkoutPageName=https://www.esshopzilla.com/checkout/?a=complete",
+    "inputFileName=data.tsv"
+    ]
+
+[dev.deploy. parameters]
+stack_name = "skp-app"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+region = "us-east-1"
+S3_bucket = "bs-Workspace"
+S3_prefix = "sam/repo/skp-app/"
+parameter_overrides=[
+    "sourceBucket=bs-Workspace",
+    "destinationBucket=bs-Workspace",
+    "sourcePrefix=misc/",
+    "destinationPrefix=misc/",
+    "env=dev",
+    "retailerDomain=www.esshopzilla.com",
+    "checkoutPageName=https://www.esshopzilla.com/checkout/?a=complete",
+    "inputFileName=data.tsv"
+    ]
+
+[qa.deploy. parameters]
+stack_name = "skp-app"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+region = "us-east-1"
+S3_bucket = "bs-Workspace"
+S3_prefix = "sam/repo/skp-app/"
+parameter_overrides=[
+    "sourceBucket=bs-Workspace",
+    "destinationBucket=bs-Workspace",
+    "sourcePrefix=misc/",
+    "destinationPrefix=misc/",
+    "env=dev",
+    "retailerDomain=www.esshopzilla.com",
+    "checkoutPageName=https://www.esshopzilla.com/checkout/?a=complete",
+    "inputFileName=data.tsv"
+    ]

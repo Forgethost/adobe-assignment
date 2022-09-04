@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Search Keyword Performance application template
+
+Conditions:
+  Envoverride:
+    !Not [!Equals [!Ref env, ""]]
+Parameters:
+  env:
+    Type: String
+  sourceBucket:
+    Type: String
+  destinationBucket:
+    Type: String
+  sourcePrefix:
+    Type: String
+  destinationPrefix:
+    Type: String
+  retailerDomain:
+    Type: String
+  checkoutPageName:
+    Type: String
+  inputFileName:
+    Type: String
+
+Resources:
+  SKPFunction:
+  Type: AWS::Serverless:Function
+  Dependson:
+    - SKPFUnctionIamRole
+  Properties:
+    FunctionName: !Join [ -, [ 'skp-lambda', !If [ Envoverride, !Ref env, Ref 'AWS::NoValue'] ] ]
+    CodeUri: ./src/lambdas/search_keyword_performance/
+    Handler : app.lambda_handler
+    Runtime: python3.8
+    Role: !GetAtt SKPFunctionIamRole.Arn
+    Timeout: 30
+    MemorySize : 256
+    Environment:
+      Variables:
+        INPUTPATH: !sub 's3://${sourceBucket}/${sourcePrefix}${inputFileName}'
+        0UTPUTPATH: !Sub 's3://${destinationBucket}/${destinationPrefix}'
+        RETAILER_DOMAIN: !Ref retailerDomain
+        CHECKOUT_PAGE: !Ref checkoutPageName
+
+  SKPFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [-, ['skp-lambda-role', [!If Envoverride, !Ref env, !Ref 'AWS::NoValue '] ] ]
+      AssUmeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: !Join [-, 'skp-lambda -inline-policy', !If [ Envoverride, !Ref env, !Ref 'AWS: :NoValue' ]]]
+          PolicyDocument:
+            Version:2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - S3:Get*
+                  - S3:List*
+                Resource:
+                  - !Sub 'arn:aws:s3:::${sourceBucket}'
+                  - !Sub 'arn:aws:s3:::${destinationBucket}'
+                  - !Sub  'arn:aws:s3:::${sourceBucket}/${sourcePrefix}*'
+              - Effect: Allow
+                Action:
+                  - S3:*
+                Resource: !Sub 'arn:aws:s3:::${sourceBucket}/${destinationPrefix}*'
+
+Outputs:
+SKPFunction:
+  Description: 'SKP Function Arn'
+  Value: !GetAtt SKPFunction.Arn
+  Export:
+    Name: '${AWS::StackName}-SKPFunctionArn'
+SKPFunctionIamRole :
+  Description: 'Implicit IAM Role Arn created for SKP Function'
+  Value: !GetAtt SKPFunctionIamRole.Arn
+  Export:
+    Name: !Sub '${AWS::StackName}SKPFunctionIAMRoleArn'

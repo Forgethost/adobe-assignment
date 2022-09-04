@@ -1,0 +1,14 @@
+[flake8]
+import-order-style=pep8
+docstring-convention=google
+ignore=F541
+per-file-ignores=
+    src/lambdas/search_keyword_performance/app.py: E501
+max-line-length=120
+exclude=
+    tests,
+    .tox,
+    .pytest_cache,
+    .idea,
+    .ipynb_checkpoints
+    cloudformation/.aws-sam

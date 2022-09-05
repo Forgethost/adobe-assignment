@@ -1,7 +1,10 @@
 # adobe-assignment
 Adobe Technical Evaluation Assignment repository
 
-## Prerequisites
+##Design
+![Alt text](./img/Flowcharts.png?raw=true "Flowchart")
+
+### Prerequisites
 -   _python 3.8_ installed in local machine
 -   _sam cli_ installed in local machine
 -   clone repo from _github_
@@ -45,6 +48,6 @@ We are using AWS SAM for packaging serverless application and deployment to AWS
 >   The output file S3 bucket and prefix is parameterized as environment variables in _cloudformation/samconfig.toml_
 > To **override** this information with your own bucket name and prefix where the output file is desired to be stored
 
-![Alt text](.img/Flowcharts.png?raw=true "Flowchart")
+
 
 

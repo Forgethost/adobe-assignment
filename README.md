@@ -10,6 +10,16 @@ Adobe Technical Evaluation Assignment repository
 -   clone repo from _github_
 -   AWS account user with AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY set in local machine having admin access
 -   _S3 bucket_ for input/output file storage
+
+###Unit tests execution
+We are using _pytest_ and _coverage_ for unit testing and code coverage
+*   install dependencies and execute tests  
+Navigate to application **_main_** directory in command prompt/cli, issue **pytest** command 
+>    ```pip install -r dev-requirements.txt -r ./src/Lambdas/search_keyword_performance/requirements.txt pytest pytest-cov pytest-mock coverage```
+  
+>    ```python -m tox -v  ```  
+
+    
 ###Direct Deployment of application
 We are using AWS SAM for packaging serverless application and deployment to AWS
 *   Package application using sam cli  

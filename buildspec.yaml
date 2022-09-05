@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      - sudo chmod +x/test-env-setup.sh && ./test-env-setup.sh
+  build:
+    commands:
+      - echo Entered code linting and unit test phase. ..
+      - CURRENT_DIR=$(pwd) ; ${CURRENT_DIR}/venv/bin/activate; python -m tox -v
+  post_build:
+    commands:
+      - echo Entered sam build phase...
+      - sudo chmod +x ./sam-build.sh && ./sam-build.sh
+reports:
+  reportJunitxml:
+    files:
+      - 'junit.xml'
+    base-directory: test-reports
+    file-format: JUNITXML
+artifacts:
+  files:
+    -'**/*'
+  discard-paths: no

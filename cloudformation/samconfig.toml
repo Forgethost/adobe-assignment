@@ -1,12 +1,14 @@
 version=0.1
+[default.global.parameters]
+stack_name = "skp-app"
 
-[default.deploy. parameters]
+[default.deploy.parameters]
 stack_name = "skp-app"
 capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
 S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app/"
+S3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
     "sourceBucket=bs-Workspace",
     "destinationBucket=bs-Workspace",
@@ -18,13 +20,13 @@ parameter_overrides=[
     "inputFileName=data.tsv"
     ]
 
-[dev.deploy. parameters]
+[dev.deploy.parameters]
 stack_name = "skp-app"
 capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
 S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app/"
+S3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
     "sourceBucket=bs-Workspace",
     "destinationBucket=bs-Workspace",
@@ -42,7 +44,7 @@ capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
 S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app/"
+S3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
     "sourceBucket=bs-Workspace",
     "destinationBucket=bs-Workspace",

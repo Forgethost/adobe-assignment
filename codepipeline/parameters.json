@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "S3Bucket",
+    "ParameterValue": "bs-skp-pipeline"
+  },
+  {
+    "ParameterKey": "SamRepoBucket",
+    "ParameterValue": "bs-skp-workspace'"
+  },
+  {
+    "ParameterKey": "SamRepoPrefix",
+    "ParameterValue": "sam/repo/"
+  }
+]

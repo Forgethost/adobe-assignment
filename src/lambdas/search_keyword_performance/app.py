@@ -122,7 +122,7 @@ class SearchKeywordPerformance:
 
 def lambda_handler(event, context):
     try:
-        input_path = os.environ.get(" INPUTPATH")
+        input_path = os.environ.get("INPUTPATH")
         obj = SearchKeywordPerformance(
             input_path, output_path, retailer_domain, checkout_page
         )
@@ -134,7 +134,7 @@ def lambda_handler(event, context):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument(" --inputpath", help=" Path of input file")
+    parser.add_argument("--inputpath", help=" Path of input file")
     args = parser.parse_args()
     os.environ["INPUTPATH"] = args.inputpath.strip()
     lambda_handler({}, None)

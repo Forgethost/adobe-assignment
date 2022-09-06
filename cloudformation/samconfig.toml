@@ -7,11 +7,11 @@ stack_name = "skp-app"
 capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
-S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app"
+s3_bucket = "bs-skp-workspace"
+s3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
-    "sourceBucket=bs-Workspace",
-    "destinationBucket=bs-Workspace",
+    "sourceBucket=skp-app",
+    "destinationBucket=skp-app",
     "sourcePrefix=misc/",
     "destinationPrefix=misc/",
     "env=dev",
@@ -25,11 +25,11 @@ stack_name = "skp-app"
 capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
-S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app"
+s3_bucket = "bs-skp-workspace"
+s3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
-    "sourceBucket=bs-Workspace",
-    "destinationBucket=bs-Workspace",
+    "sourceBucket=skp-app",
+    "destinationBucket=skp-app",
     "sourcePrefix=misc/",
     "destinationPrefix=misc/",
     "env=dev",
@@ -38,20 +38,39 @@ parameter_overrides=[
     "inputFileName=data.tsv"
     ]
 
-[qa.deploy. parameters]
+[qa.deploy.parameters]
 stack_name = "skp-app"
 capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 confirm_changeset = true
 region = "us-east-1"
-S3_bucket = "bs-Workspace"
-S3_prefix = "sam/repo/skp-app"
+s3_bucket = "bs-skp-workspace-qa"
+s3_prefix = "sam/repo/skp-app"
 parameter_overrides=[
-    "sourceBucket=bs-Workspace",
-    "destinationBucket=bs-Workspace",
+    "sourceBucket=skp-app",
+    "destinationBucket=skp-app",
     "sourcePrefix=misc/",
     "destinationPrefix=misc/",
-    "env=dev",
+    "env=qa",
     "retailerDomain=www.esshopzilla.com",
     "checkoutPageName=https://www.esshopzilla.com/checkout/?a=complete",
     "inputFileName=data.tsv"
     ]
+
+[prod.deploy.parameters]
+stack_name = "skp-app"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+region = "us-east-1"
+s3_bucket = "bs-skp-workspace-prod"
+s3_prefix = "sam/repo/skp-app"
+parameter_overrides=[
+    "sourceBucket=skp-app",
+    "destinationBucket=skp-app",
+    "sourcePrefix=misc/",
+    "destinationPrefix=misc/",
+    "env=prod",
+    "retailerDomain=www.esshopzilla.com",
+    "checkoutPageName=https://www.esshopzilla.com/checkout/?a=complete",
+    "inputFileName=data.tsv"
+    ]
+

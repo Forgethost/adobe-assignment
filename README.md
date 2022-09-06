@@ -1,7 +1,7 @@
 # adobe-assignment
 Adobe Technical Evaluation Assignment repository
 
-##Design  
+## Design  
 ![Alt text](./img/Flowcharts.png?raw=true "Flowchart")
 
 ### Prerequisites
@@ -11,7 +11,7 @@ Adobe Technical Evaluation Assignment repository
 -   AWS account user with AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY set in local machine having admin access
 -   _S3 bucket_ for input/output file storage
 
-###Unit tests execution  
+### Unit tests execution  
 We are using _pytest_ and _coverage_ for unit testing and code coverage
 *   install dependencies and execute tests  
 Navigate to application **_main_** directory in command prompt/cli, issue **pytest** command 
@@ -20,7 +20,7 @@ Navigate to application **_main_** directory in command prompt/cli, issue **pyte
 >    ```python -m tox -v  ```  
 
     
-###Direct Deployment of application  
+### Direct Deployment of application  
 We are using AWS SAM for packaging serverless application and deployment to AWS
 *   Package application using sam cli  
 Navigate to application **_cloudformation_** directory in command prompt/cli, issue **sam build** command  
@@ -28,7 +28,7 @@ Navigate to application **_cloudformation_** directory in command prompt/cli, is
 -   Deploy application using sam  
 ```sam deploy --config-env dev  --debug```  
     
-###Application deployment using CI/CD pipeline    
+### Application deployment using CI/CD pipeline    
 We are using S3 as source repo provide
 *   Zip application repo in a directory  
 Navigate to application **_root_** directory in terminal and issue **rm** and **zip** commands  
@@ -38,15 +38,15 @@ Navigate to application **_root_** directory in terminal and issue **rm** and **
 -   Copy application to s3 using **_aws cli_** command  
 ```aws cloudformation create-change-set --stack-name skp-app-ppl-stack --change-set-name skp-app-ppl-manual-create --template-body file://template.yaml --change-set-type UPDATE --capabilities CAPABILITY_ NAMED_IAM --parameters file://parameters.json  ```  
   
-###CI/CD pipeline infrastructure Deployment  
+### CI/CD pipeline infrastructure Deployment  
 We are using cloudformation template to deploy _codepipeline_ and _codebuild_ infrastructure to AWS
 *   CI/CD infrastructure deployment using cloudformation  
 Navigate to application **_codepipeline_** directory in command prompt/cli, issue **aws cloudformation** command  
-    ```aws cloudformation create-change-set --stack-name skp-app-ppl-stack --change-set-name skp-app-ppl-manual-create --template-body file://template.yaml --change-set-type CREATE --capabilities CAPABILITY_ NAMED_IAM --parameters file://parameters.json```  
-> Incase unt to upgrade codepipeline stack after any changes to codepipeline CFN template  
-```aws cloudformation create-change-set --stack-name skp-app-ppl-stack --change-set-name skp-app-ppl-manual-create --template-body file://template.yaml --change-set-type UPDATE --capabilities CAPABILITY_ NAMED_IAM --parameters file://parameters.json  ```  
+    ```aws cloudformation create-change-set --stack-name skp-app-ppl-stack --change-set-name skp-app-ppl-manual-create --template-body file://template.yaml --change-set-type CREATE --capabilities CAPABILITY_NAMED_IAM --parameters file://parameters.json```  
+> Incase you want to upgrade codepipeline stack after any changes to codepipeline CFN template  
+```aws cloudformation create-change-set --stack-name skp-app-ppl-stack --change-set-name skp-app-ppl-manual-create --template-body file://template.yaml --change-set-type UPDATE --capabilities CAPABILITY_NAMED_IAM --parameters file://parameters.json  ```  
 
-###Execution of application  
+### Execution of application  
 We are using AWS SAM for packaging serverless application and deployment to AWS
 *   From console    
     -   Navigate to lambda that starts with  **skp-app**

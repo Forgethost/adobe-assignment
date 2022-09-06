@@ -1,11 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CodePipeline for the Sample Lambda Function
+
 Parameters:
   ProjectName:
     Description: Name of the Project
     Type: String
     Default: skp-ppl
-  S3BUcket:
+  S3Bucket:
     Description: s3 Bucket, which will hold the artifacts
     Type: String
   RepoName:
@@ -20,583 +21,541 @@ Parameters:
     Type: String
 
 Resources:
-  PipelineBucket :
-  Type: AWS::S3::Bucket
-  Properties:
-    BucketName: !Ref S3BUcket
-    AccessControl: BucketOwnerFullControl
-    BucketEncryption:
-      ServerSide EncryptionConfiguration:
-      - ServerideEncryptionByDefault:
-          SSEALgorithm: AES256
-    VersioningConfiguration:
-      Status: Enabled
-    PublicAccessBlockConfiguration:
-      BlockPUblicAcls: true
-      BLocKPublicAcls : true
-      BLockPublic Policy: true
-      IgnorePutblicAcls : true
-      RestrictPublicBuckets: true
+  PipelineBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3Bucket
+      AccessControl: BucketOwnerFullControl
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
-PipelineBucketPolicy:
-  Type: AWS::S3::BucketPolicy
-  Properties:
-    Bucket: !Ref PipelineBucket
-    PolicyDocument :
-      Statement:
-        - Action:
-            - s3:*
-          Principal:
-          AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Effect: Allow
-          Resource:
-          - !Join
-          - 'arn:aws:s3:::'
-          - !Ref S3BUcket
+  PipelineBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PipelineBucket
+      PolicyDocument :
+        Statement:
+          - Action:
+              - s3:*
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Effect: Allow
+            Resource:
+            - !Join
+              - ''
+              -
+                - 'arn:aws:s3:::'
+                - !Ref S3Bucket
 
-ManualApprovalTopic :
-  Type: AWS::SNS::Topic
-  Properties:
-    TopicName: !Sub $(ProjectName}-ManualApprovalTopic
-    Tags:
+  ManualApprovalTopic :
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${ProjectName}-ManualApprovalTopic
+      Tags:
+        - Key: project
+          Value: adobe
+
+  ManualApprovalTopicPolicy :
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub ${ProjectName}-manual-approval-policy
+      PolicyDocument :
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - sns:*
+            Resource: !Ref ManualApprovalTopic
+
+  ManualApprovalLSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: babu.biswajit@gmail.com
+      Protocol: email
+      TopicArn: !Ref ManualApprovalTopic
+  BuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-CodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: ALlow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+  BuildProjectPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: ManualApprovalTopicPolicy
+    Properties:
+      PolicyName: !Sub ${ProjectName}-CodeBuildPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action: [
+              "s3:GetBucketAcl",
+              "logs:CreateLogGroup",
+              "logs:PutLogEvents",
+              "codebuild:CreateReportGroup",
+              "codebuild:CreateReport",
+              "s3:PutObject",
+              "s3:GetObject" ,
+              "logs:CreateLogStream",
+              "codebuild:UpdateReport",
+              "codebuild:BatchPutCodeCoverages",
+              "codebuild:BatchPutTestCases",
+              "s3:GetBucketLocation",
+              "s3:GetObjectVersion"
+                    ]
+            Resource:
+              - !Sub  "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/skp*"
+              - !Sub  "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/skp*"
+              - !Sub  "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/skp*"
+              - !Sub  "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/skp*:*"
+              - !Sub  "arn:aws:S3:::codepipeline-${AWS::Region}-**"
+          -
+            Action: [
+              "cloudformation:*",
+              "iam:*",
+              "lambda:*"
+              ]
+            Resource:
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/*/*"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*:**"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset-target/**"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:type/resource/*"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:transform/*"
+            - !Sub "arn:aws:iam::${AWS::AccountId}:role/skp*"
+            - !Sub  "arn:aws:iam::${AWS::AccountId}:policy/skp*"
+            - !Sub "arn:aus:lambda:${AWS::Region}:${AWS::AccountId}:function:skp*"
+            Effect: Allow
+          - Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Join ['', ['arn:aws:s3:::', !Ref S3Bucket,'/*']]
+              - !Join ['',['arn:aws s3:::', !Ref S3Bucket]]
+              - !Sub "arn:aws:s3:::${SamRepoBucket}/*"
+              - !Sub "arn:aws:s3:::${SamRepoBucket}/${SamRepoPrefix}*"
+          -
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:createLogstream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+      Roles:
+      - !Ref BuildProjectRole
+
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-build
+      Description: !Ref ProjectName
+  #    EncryptionKey: !Ref CHKARN
+      ServiceRole: !GetAtt BuildProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        EnvironmentVariables :
+          - Name: S3Bucket
+            Value: !Ref S3Bucket
+  #        - Name: KMSKey
+  #          Value: !Ref CMKARN
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 10
+      Tags:
       - Key: project
         Value: adobe
 
-ManualApprovalTopic Policy :
-  Type: AWS::IAM::ManagedPolicy
+  DeployProjectRole:
+    Type: AWS::IAM::Role
     Properties:
-    ManagedPolicyName: !Sub ${ProjectName}-manual-approval -policy
-    PolicyDocument :
-      Version: '2012-10-17'
-      Statement:
-        -
-          Effect: ALlow
-          Action:
-            - sns:*
-          Resource: !Ref ManualLApprovalTopic
-ManualApprovalLSUbscription:
+      RoleName: !Sub ${ProjectName}-CodeDeployRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+            - sts:AssumeRole
+      Path: /
 
-Type: AWS: : SNS::Subscription
-Properties:
-Endpoint: biswajit.sharma@cdphp. com
-Protocol: email
-TopicArn: !Ref ManualApprovalTopic
-BuildProjectRole:
-Type: AWS: :IAM::Role
-Properties:
-RoleName: !Sub ${ProjectNane} - CodeBuildRole
-AssumeROle PolicyDocument:
-Version: 2012-10-17
-Statement:
-Effect: ALlow
-Principal:
-Service:
--codebuild. amazonaws.com
-Action:
-- sts:AssumeRole
-Path: /
-BuildProjectPolicy:
-I
-Type: AWS::IAM: :Policy
-Depends0n: ManualApprovalLTopicPolicy
-Properties:
-PolicyName : !Sub ${ProjectName} -CodeBuildPolicy
-PolicyDocument:
-Version: 2012-10-17
-Statement:
-Sid: "VisualEditor0"
-Effect: "ALlow"
-Action: [
-"s3 : GetBucketAcl",
-"logs: CreateLogGroup",
-"logs: PutLogEvents"
-"codebuild : CreateReportGroup",
-"codebuild : CreateReport",
-"s3: Putobject",
-"s3: Get0bject" ,
+  DeployProjectPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: ManualApprovalTopicPolicy
+    Properties:
+      PolicyName: !Sub ${ProjectName}-CodeDeployPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: [
+              "s3:GetBucketAcl",
+              "Logs:CreateLogGroup",
+              "logs:PutLogEvents",
+              "codebuild:CreateReportGroup",
+              "codebuild:CreateReport",
+              "s3:PutObject",
+              "s3:GetObject",
+              "logs: CreateLogStream",
+              "codebuild:UpdateReport",
+              "codebuild:BatchPutCodeCoverages",
+              "codebuild:BatchPutTestCases",
+              "s3:GetBucketLocation",
+              "s3:GetObjectVersion"
+                ]
+            Resource:
+              - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/skp*"
+              - !Sub  "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/skp*"
+              - !Sub  "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/skp*"
+              - !Sub  "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/skp*:**"
+          - Effect: Allow
+            Action: [
+            "cloudformation:*",
+            "iam:*",
+            "lambda:*"
+                ]
+            Resource:
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/**"
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:changeSet/*/*"
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/*:**"
+              - !Sub "arn:awS:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset-target/*"
+              - !Sub "arn:aws: cloudformation:${AWS::Region}:${AWS::AccountId}:type/resource/*"
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:aws:transform/*"
+              - !Sub  "arn:aws:iam::${AWS::AccountId}:role/skp*"
+              - !Sub  "arn:aws:iam::${AWS::AccountId}:policy/skp*"
+              - !Sub  "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:skp*"
 
-"Logs:Createlogstream",
-"codebuild:UpdateReport",
-"codebuild: BatchPutCodeCoverages",
-"codebuild: BatchPutTestCases",
-"s3:GetBucketLocation",
-"s3:GetobjectVersion"
-Resource:
-"arn:aws: codebuild :${AWS: :Region}:${AWS: :AccountId} :report-group/skp*"
-!SUb
-"arn :aws : codebuild:${AWS: : Region}:${AWS: :AccountId} : report-group/skp*"
-! Sub
-! Sub
-"arn:aws:logs:${AWS: :Region}:${AWS:AccountId} :log-group :/aws/codebuild/skp*"
-- !Sub "arn:aws:logs:${AWS: : Region}:${AWS::AccountId}:log-group: /aws/codebuild/skp*:*"
-- !Sub"arn:aws:S3:::codepipeline-${AWS:: Region}-**
-Action: [
-"cloudformation:*"
-"iam:*",
-"lambda:*"
-I
-Resource:
-- !Sub
-"arn :aws:cloudformation:${AWS: : Region}:${AWS: :AccountId} :stack/*"
-! Sub
-"arn :aws:cloudformation:${AWS: : Region}:${AWS: :AccountId} : changeSet/*/*"
-"arn :aws: cloudformation:${AWS:: Region}:${AWS: :AccountId} :stackset/* : **
-!Sub
--
-"arn : aws : cloudformation : ${AMS: : Region}:${AWS: :AccountId} :stackset-target/**
-!Sub
--
-"arn :aws : cloudformation : ${AWS: :Region} : ${ANS: :AccountId}:type/resource/*"
-!Sub
-!Sub "arn : aws : cloudformation:${AWS: :Region):${AWS : :AccountId} :transform/*"
-- !Sub "arn:aws:iam: :${AWS: :AccountId} : role/skp*"
-- !Sub"arn:aws:iam: :${AWS: :AccountId} :policy/skp*"
--!Sub "arn :aus :lambda:${AWS: :Region} :${AWS: :AccountId} :function : skp*"
-Effect: ALlow
-Effect: ALLow
-Action:
-S3:*
--
-Resource:
-!Join ['', ('arn :aws: s3:::, !Ref s3Bucket,/*'])
-!Join ['',[l'arn : aws :s3:::", !Ref SJBucket]]
-! Sub 'arn:aws:s3:::${SamRepoBucket}/${SamRepoPrefix}*
+          - Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Sub "arn:aws:s3:::${S3Bucket}"
+              - !Sub "arn:aws:s3:::${S3Bucket}/*"
+              - !Sub "arn:aws:s3:::${SamRepoBucket}/*"
+              - !Sub "arn: aws:s3:::${SamRepoBucket}/${SamRepoPrefix}*"
+  #        - Effect: Allow
+  #          Action:
+  #            - kms:*
+  #          Resource: !Ref CHKARN
+          - Effect: Allow
+            Action:
+              - logs:CreatelogGroup
+              - logs:CreatelogStream
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+      Roles:
+        - !Ref DeployProjectRole
+  DeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-deploy
+      Description: !Ref ProjectName
+#        EncryptionKey: !Ref CHKARN
+      ServiceRole: !GetAtt DeployProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        EnvironmentVariables:
+          - Name: S3Bucket
+            Value: !Ref S3Bucket
+#          - Name: KMSKey
+#            Value: !Ref CHKARN
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+          build:
+            commands:
+              - sam deploy --config-file ./cloudformation/samconfig.toml --debug -no-confirm-changeset --no-fail-on-empty-changeset
+      TimeoutInMinutes: 10
+      Tags:
+      - Key: Name
+        Value: !Ref ProjectName
 
-Effect: ALLow
-Action:
-Logs:CreateLogGroup
-- logs: createLogstream
-- logs: PutLogEvents
-Resource: arn:aws:logs:*:*:*
-Roles:
-!Ref BuildProjectROle
-BuildProject:
-Type: AWS::CodeBuild: :Project
-Properties:
-Name: !SUb ${ProjectName}-build
-Description: !Ref ProjectName
-EncryptionKey: !Ref CHKARN
-ServiceRole: !GetAtt BuildProjectRole . Arn
-Artifacts:
-Type: CODEPIPELINE
-Environment:
-Type: linuxContainer
-ComputeType: BUILD_GENERAL1_SMALL
-Image: aws/codebuild/standard:5.0
-I
-EnvironmentVariables :
-Name: S3Bucket
-Value: !Ref S3Bucket
-#
-Name: KHSKEY
-Volue: !Ref CHKARN
-SoUrce:
-Type: CODEPIPELINE
-TineoutInMinutes: 10
-Tags:
-- Key: Name
-Value: !Ref ProjectName
-DeployProjectRole:
-Type: AWS: :IAM::Role
-Properties:
+  PipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName : !Sub ${ProjectName}-codepipeline-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: ALlow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref ManualApprovalTopicPolicy
+      Path: /
+  PipelinePolicy:
+    Type: AWS::IAM::Policy
+    DependsOn: ManualApprovalTopicPolicy
+    Properties:
+      PolicyName: !Sub ${ProjectName}-codepipeline-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+            - iam:PassRole
+            Resource: "*"
+            Condition:
+              StringEqualsIfExists:
+                iam:PassedToService:
+                  - cloudformation.amazonaws.com
+                  - elasticbeanstalk.amazonaws.com
+                  - ec2.amazonaws.com
+                  - ecs-tasks.amazonaws.com
+          - Effect : Allow
+            Action:
+              - codecommit:CancelUploadArchive
+              - codecommit:GetBranch
+              - codecommit:GetComn1t
+              - codecomnit:GetRepository
+              - codecomnit:GetUploadArchiveStatus
+              - codecomnit:UploadArchive
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - codedeploy:CreateDeployment
+              - codedeploy:GetApplication
+              - codedeploy:GetApplicationRevision
+              - codedeploy:GetDeployment
+              - codedeploy:GetDeploymentConfig
+              - codedeploy:RegisterApplicationRevision
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - codestar-connections:UseConnection
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "elasticbeanstalk:*",
+              "ec2:*",
+              "elasticloadbalancing :*",
+              "autoscaling:*",
+              "cloudwatch:*",
+              "s3:*",
+              "sns:*",
+              "cloudformation:*",
+              "ecs:*"
+                ]
+            Resource: "*"
+          - Effect : Allow
+            Action:
+              - codepipeline:*
+              - iam:ListRoles
+              - cloudformation:Describe*
+              - cloudFormation:List*
+              - codecommit:List*
+              - codecommit:Get*
+              - codecommit:GitPull
+              - codecommit:UploadArchive
+              - codecommit:CancelUploadArchive
+              - codebuild:BatchGetBuilds
+              - codebuild:StartBuild
+              - cloudformation:CreateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:UpdateStack
+              - cloudformation:CreateChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:SetStackPolicy
+              - cloudformation:ValidateTemplate
+              - iam:PassRole
+              - s3:ListAllMYBuckets
+              - s3:GetBucketLocation
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - s3:*
+            Resource:
+              - !Join ['',['arn:aws:s3:::',!Ref S3Bucket,'/*']]
+              - !Join ['',['arn:aws:s3: ::',!Ref S3Bucket]]
+              - !Sub 'arn:aws:S3:::${SamRepoBucket}/*'
+              - !Sub 'arn:aws:S3:::${SamRepoBucket}/${SamRepoPrefix}*'
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource:
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/ToolsAcctCodePipelineCodeCommitRole"
+          - Effect: Allow
+            Action: [
+              "opsworks:CreateDeployment",
+              "opsworks:DescribeApps",
+              "opsworks:DescribeCommands",
+              "opsworks:DescribeDeployments",
+              "opsworks:DescribeInstances",
+              "opsworks:DescribeStacks",
+              "opsworks:UpdateApp",
+              "opsworks:UpdateStack"
+                  ]
+            Resource: "*"
+          - Effect: "Allow"
+            Action: [
+            "cloudformation:CreateStack",
+            "cloudformation: DeleteStack",
+            "cloudformation: DescribeStacks",
+            "cloudformation: UpdateStack",
+            "cloudformation :CreateChangeSet",
+            "cloudformation: DeleteChangeSet",
+            "cloudformation:DescribeChangeSet",
+            "cloudformation:ExecuteChangeSet",
+            "cloudformation: SetStackPolicy",
+            "cloudformation:ValidateTemplate"
+                  ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "codebuild:BatchGetBuilds",
+              "codebuild:StartBuild",
+              "codebuild:BatchGetBuildBatches",
+              "codebuild:StartBuildBatch"
+              ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "devicefarm:ListProjects",
+              "devicefarm:ListDevicePools",
+              "devicefarm:GetRun",
+              "devicefarm:GetUpload",
+              "devicefarm:CreateUpload",
+              "devicefarm:ScheduleRun"
+                  ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "servicecatalog:ListProvisioningArtifacts",
+              "servicecatalog:CreateProvisioningArtifact",
+              "servicecatalog:DescribeProvisioningArtifact",
+              "servicecatalog:DeleteProvisioningArtifact",
+              SenviCecatalLog:UpdateProduct"
+                    ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "cloudformation:ValidateTemplate"
+                ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "ecr:DescribeImages"
+              ]
+            Resource: "*"
 
-RoleName: !Sub ${ProjectName}-CodeDeployRole
-AssumeRolePolicyDocument:
-Version: 2012-10-17
-Statement:
-Effect: ALlow
-Principal:
-Service:
-•codebuild. amazonaws.com
-Action:
-- sts:AssumeRole
-Path: /
-DeployProjectPolicy:
-Type: AWS : :IAM: :Policy
-Depends0n: ManualApprovalTopicPolicy
-Properties:
-PolicyName: !Sub ${ProjectName}-CodeDeployPolicy
-PolicyDocument:
-Version: 2012-16-17
-Statement:
-Sid: "VisualEditore"
-Effect: "ALLOW
-I
-Action: [
-"s3: GetBucketAcl",
-"Logs:CreateLogGroup",
-"logs:PutLogEvents",
-"codebuild: CreateReportGroup",
-"codebuild: CreateReport",
-"s3:Putbject"
-"s3:Getobject",
-"logs: CreateLogstream",
-"codebuild:UpdateReport"
-"codebuild : BatchPutCodeCoverages",
-"codebuild : BatchPutTest Cases",
-"s3:GetBucket Location",
-"s3:Get0bjectVersion"
-
-Resource:
-"arn:aws: codebuild:${AWS: :Region}:${AWS::AccountId} : report- group/skp*"
-• !Sub
-"arn:aws: codebuild:${AWS: : Region}:${AWS: :AccountId} :report- group/skp*"
-- !Sub
-"arn:aws :logs:${AWS : : Region}:${AWS: :AccountId} : log-group:/aws/codebuild/skp*"
-- !Sub
-"arn:aws :logs:${AWS: : Region}:${AWS::AccountId} :log-group:/aws/codebuild/skp* :**
-- !Sub
-I Sub
-"arn: aws:s3: ::codepipeline-${AWS: : Region} -**
-Action: [
-"cloudformation:*",
-"iam:*"
-"lambda ; *"
-Resource:
-• !Sub "arn:awWs:cloudformation:${AWS: :Region}:${AWS: :AccountId}:stack/**
-• !Sub "arn:aws: cloudformation: ${AWS::Region}:${AWS: :AccountId} : changeSet/*/*"
-• !Sub "arn:awWs:cloudformation:${AWS: :Region}:${AWS: :AccountId} :stackset/*:**
-• !Sub "arn:awS:cloudformation:${AWS:: Region}:${AWS: :AccountId}:stackset-target/*"
-- !Sub "arn:aws: cloudformation:${AWS::Region}:${AWS::AccountId}:type/resouUrce/*"
-"arn : aws:cloudformation:${AWS: :Region}:aws:transform/*"
-!Sub
--
-"arn:aws:iam: :${AWS: :AccountId}:role/skp*"
-- !Sub
-"arn:aws:iam: :${AWS::AccountId}: policy/skp*"
-- !Sub
-"arn:aws:lambda:${AWS ::Region}:${AWS::AccountId} : function : skp*"
-- !Sub
-Effect: ALlow
-I
-Effect: Allow
-Action:
-- s3:
-Resource:
-- !Sub 'arn:aws :sJ:::${s3BUcket}/*!
-!Sub 'arn: aws:s3:::${Sam RepoBUcket}/${SamRepoPrefix} * '
-'arn:aws: s3:::codepipeline -us-east-1 -**
-Effect: Allow
-Action:
-- kms:t
-Resource: !Ref CHKARN
-Effect: ALlow
-Action:
-
-Action:
-logs:CreatelogGroup
-logs:CreatelogStream
-- logs:PutLogEvents
-Resource: arn:aws:logs:*;*;*
-Roles:
-!Ref DeployProjectROle
-DeployProject:
-Type: AWS: : CodeBuild::Project
-Properties:
-Name: !Sub ${ProjectName} - deploy
-Description: !Ref ProjectName
-EncryptionKey: !Ref CHKARN
-ServiceRole: !GetAtt DeployProjectRole . Arn
-Artifacts:
-Type: CODEPIPELINE
-Environment:
-Type: linuxContainer
-ComputeType: BUILD_GENERAL1_SHALL
-Inage: aws/codebuild/standard:5.0
-EnvironmentVariables:
-Name: S3Bucket
-Value: !Ref S3Bucket
-Name: KMSKey
-Volue: !Ref CHKARN
-Source:
-Type: CODEPIPELINE
-BuildSpec: |
-version: 0.2
-phases:
-I
-build:
-commands:
-sam deploy --config-file ./cloudformation/samconfig . toml --debug -no-confirn- changeset --no-fail-on-empty- changeset
-TimeoutInMinutes: 10
-Tags:
-- Key: Name
-Value: !Ref ProjectName
-
-PipeLineRole:
-Type: AWS: :IAM::Role
-Properties:
-RoleName : ISub ${ProjectName}-codepipeline-role
-AssumeRolePolicyDocument:
-Version: 2012-10-17
-Statement:
-Effect: ALlow
-Principal:
-Service:
-- codepipeline.amazonawWs.com
-Action:
--sts:AssumeRole
-ManagedPolicyArns:
-- !Ref ManualApprovalTopicPolicy
-Path: /
-PipelinePolicy:
-Type: AWS: :IAM::Policy
-Depends0n: ManuaLApprovalTopic Policy
-Properties:
-PolícyName: !Sub ${ProjectName}-codepipeline - policy
-PolicyDocument:
-Version: 2612-10-17
-Statement:
-Effect: AlLow
-Action:
-- iam: PassRole
-Resource: "*"
-Condition:
-StringEqualsIfExists:
-lam: PassedToService:
-I
-cloudformation .amazonaws.com
-elasticbeanstalk. amazonaws.com
-- ec2.amazonawS.Com
-ecs-tasks.amazonaws.com
-Effect : ALLow
-Action:
-codecommit: CancelUploadArchive
-codecommit: Get Branch
-
-• codecommit: GetBranch
-• codecommit : GetComn1t
-• codecomnit : GetRepository
-• codecomnit: GetUploadArchiveStatus
-• codecomnit : UploadArchive
-Resource: "*
-• Effect: Allow
-Action:
-• codedeploy: CreateDeployment
-- codedeploy : GetApplication
-• codedeploy: GetApplicationRevision
-- codedeploy : GetDeployment
-- codedeploy: GetDeploymentConfig
-- codedeploy : RegisterApplicationRevision
-Resource:
-- Effect: Allow
-Action: [
-"codestar - connections :UseConnection"
-Resource:
-- Effect: Allow
-Action: [
-"elasticbeanstalk:*"
-"ec2: *"
-"elasticloadbalanCing :*"
-"autoscaling:*",
-"cloudwatch : *",
-"s3:*",
-"sns:*",
-I
-"cloudformation:*",
-"rds:*",
-"sqs:*"
-"ecs:*"
-Resource: "*
-Effect : AlLow
-Action:
-
-to parameters,json
-Action:
-- codepipeline :*
-<- lam: ListRoles
-- cloudformation: Describe*
-- cloudFormation:List*
-• codecommit : List*
-codecommit: Get*
-• codecommit: GitPull
-- codecommit: UploadArchive
-- codecommit:CancelUploadArchive
-- codebuild: BatchGetBuilds
-- codebuild: StartBuild
-- cloudformation:CreateStack
-• cloudformation :DeleteStack
-- cloudformation: DescribeStacks
-- cloudformation :UpdateStack
-- cloudformation: CreateChangeSet
-cloudformation : DeleteChangeSet
-cloudformation: DescribeChangeSet
-cloudformation: ExecuteChangeSet
-cloudformation : SetStackPolicy
-cloudformation : ValidateTemplate
-iam: PassRole
-S3:ListALLMYBuckets
-S3:GetBucketLocation
-Resource:
-Effect: ALLow
-Action:
-- S3:*
-I
-Resource:
-- !Join ['",('arn:aws:s3:::',!Ref SSBUcket,'/*"]]
-- !Join ['",('arn:aws:s3: ::',!Ref SJBUcket]]
-- !Sub 'arn:aws: S3:::${SamRepoBucket}/${SamRepoPrefix}**
-Effect: ALlow
-Action:
-- sts:AssumeRole
-
-Resource:
-• !Sub "arn:aws:iam: :${AWS: :AccountId} :role/ToolsAcctCodePipelineCodeCommitRole"
-arn: aws:iam: :${ProductionAccount}:role/ToolSAcc tCode Pipe lineCloudFormationRole
-!SUb
--
-arn:aws:iam: :${TestAccount}:role/ ToolsAcctCodePipelineClovdFormotionRole
-!SUb
--
-Action: t
-"opsworks: CreateDeployment",
-"opsworks: DescribeApps",
-"opsworks:DescribeCommands",
-"opsworks: DescribeDeployments",
-"opsworks: DescribeInstances",
-"opsworks: DescribeStacks",
-"opsworks: UpdateApp"
-"opsworks: UpdateStack"
-Resource: "*"
-Effect: "ALlow"
-Action: [
-"cloudformation:CreateStack",
-"cloudformation: DeleteStack",
-"cloudformation: Describestacks",
-"cloudformation: UpdateStack"
-"cloudformation :CreateChangeSet"
-"cloudformation: DeleteChangeset",
-"cloudformation:DescribeChangeSet",
-"cloudformation:ExecuteChangeSet",
-"cloudformation: SetStackPolicy
-"cloudformation:ValidateTemplate"
-Resource: "*n
-I
-Effect: "ALlow"
-Action: [
-"codebuild: BatchGetBuilds",
-"codebuild:StartBUild",
-"codebuild: BatchGetBuildBatches",
-"codebuild:StartBuildBatch"
-
-Resource: "*"
-Effect: "ALLOW"
-Effect: "Allow"
-Action: [
-"devicefarn: ListProjects",
-"devicefarn : ListDevicePools",
-"devicefarm: GetRun",
-"devicefarm: GetUpload",
-"devicefarm:CreateUpload",
-"devicefarn: ScheduleRun"
-Resource: "*"
-Effect: "Allow
-Action: (
-"servicecatalog: List ProvisioningArtifacts",
-"servicecatalog: CreateProvisioningArtifact",
-"servicecatalog: DescribeProvisioningArtifact",
-"servicecatalog: DeleteProvisioningArtifact",
-SenviCecatalLog:UpdateProduct"
-Resource: "*
-Effect: "ALLow"
-Action: [
-"cloudformation:ValidateTemplate"
-I
-Resource:"*
-Effect: "ALlow
-Action: [
-"ecr:DescribeImages"
-J
-Resource: "* n
-
-Effect: "ALLow"
-Action: t
-"states :DesoribeExecution",
-"states : DescribestateMachine",
-"states : StartExecution"
-Resource: "*"
-Effect: "ALLow"
-Action: [
-"appconfig: StartDeployment",
-"appconflg:stopDeployment",
-"appconfg: GetDeployment"
-Resource: "*!
-Roles:
-! Ref PipeLineRole
-Pipeline:
-Type: AWS::CodePipeline : Pipeline
-Propertiles:
-RoleArn: !GetAtt PipeLineRole.Arn
-Name: !Ref AWS: : StackName
-Stages:
-- Name: Source
-Actions:
-I
-- Name: App
-ActionTypeId:
-Category: Source
-Owner: AWS
-Version: 1
-A
-Provider: S3
-Configuration:
-S3BUcket: !Ref SIBucket
-S30bjectKey: !Sub "src/${RepoName}.zip"
-
-S30bjectKey: !sUb "src/${RepoName}.zip"
-OutputArtifacts:
-sCCheckoutArtifact
-- Name:
-1
-RunOrder:
-!Sub arn : aws:iam::${DevAccount}: role/Too lsAcctCodePipe line Code CommítRole
-#RoleArn:
-RoleArn:
-Fn::If:
-- AddCodeBuildResource
-- !SUb arn: ows:iom: :${DevAccount}: role/ToolsAcctCodePipeline CodeCommi tRole
-- !Ref AWS: :NoValue
-Name: Build
-Actions:
-Name: Build
-ActionTypeId:
-Category: Build
-Owner: AWS
-Version: 1
-Provider: CodeBuild
-Configuration :
-ProjectName: !Ref BuildProject
-Runorder: 1
-InputArtifacts:
-- Name: SCcheckoutArtifact
-OutputArtifacts:
-I
-- Name: BuildOutput
-Name: ApproveDeploy
-Actions:
-Name: ApproveDeploy
-ActionTyYpeId:
-Category: Approval
-Owner: AWS
-Version: 1
-Provider: Manual
-Configuration:
-NotificationArn : !Ref ManualApproval Topic
-CUstomData: "Need Approval for deployment"
-- Name: DeployToTest
-
-DeployToTest
-Actions:
-Name: Deploy
-ActionTypeId:
-Category: Build
-Owner: AWS
-Version: 1
-Provider: CodeBuild
-Configuration :
-ProjectName: !Ref DeployProject
-Runûrder: 1
-InputArtifacts:
-- Name: Buildoutput
-Artifactstore:
-Type: s3
-Location: !Ref S3BUcket
+          - Effect: Allow
+            Action: [
+              "states:DescribeExecution",
+              "states:DescribeStateMachine",
+              "states:StartExecution"
+                  ]
+            Resource: "*"
+          - Effect: Allow
+            Action: [
+              "appconfig:StartDeployment",
+              "appconflg:stopDeployment",
+              "appconfg:GetDeployment"
+                  ]
+            Resource: "*"
+      Roles:
+        - !Ref PipeLineRole
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipeLineRole.Arn
+      Name: !Ref AWS::StackName
+      DisableInboundStageTransitions: [
+        {
+          "Reason": "Disable for Autorun",
+          "StageName": "Source"
+        }
+                  ]
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: RetrieveSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                S3BUcket: !Ref S3Bucket
+                S30bjectKey: !Sub "src/${RepoName}.zip"
+              OutputArtifacts:
+                - Name: SCcheckoutArtifact
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration :
+                ProjectName: !Ref BuildProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: SCcheckoutArtifact
+              OutputArtifacts:
+                - Name: BuildOutput
+        - Name: ApproveDeploy
+          Actions:
+            - Name: ApproveDeploy
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: 1
+                Provider: Manual
+              Configuration:
+                NotificationArn: !Ref ManualApprovalTopic
+                CustomData: "Need Approval for deployment"
+        - Name: DeployToTest
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration :
+                ProjectName: !Ref DeployProject
+              RunOrder: 1
+              InputArtifacts:
+                - Name: BuildOutput
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
